@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import ResultList from './components/ResultList.jsx';
 import MessagePreview from './components/MessagePreview.jsx';
 import SearchBox from './components/SearchBox.jsx';
-import { composeMessage, PRIORITY_PLATFORMS } from './lib/composeMessage.js';
+import { composeMessage, PLATFORMS } from './lib/composeMessage.js';
 import { searchSongs } from './lib/itunes.js';
 import { canShare, copyText, shareOrCopy } from './lib/share.js';
 
@@ -16,7 +16,6 @@ export default function App() {
 
   const [selected, setSelected] = useState(null);
   const [links, setLinks] = useState({});
-  const [universal, setUniversal] = useState(null);
   const [resolving, setResolving] = useState(false);
   const [resolveError, setResolveError] = useState(null);
   const [warning, setWarning] = useState(null);
@@ -72,7 +71,6 @@ export default function App() {
 
       setSelected(track);
       setLinks({ apple_music: track.appleMusicUrl });
-      setUniversal(null);
       setResolveError(null);
       setWarning(null);
       setResolving(true);
@@ -99,30 +97,13 @@ export default function App() {
       }
 
       if (requestIdRef.current === requestId) setResolving(false);
-
-      try {
-        const res = await fetch(`/api/details?${new URLSearchParams({ ap: track.appleMusicUrl })}`);
-        const body = await res.json();
-        if (requestIdRef.current !== requestId) return;
-
-        if (res.ok && body) {
-          setLinks((current) => ({ ...current, ...body.links }));
-          if (body.universal) setUniversal(body.universal);
-        }
-      } catch {
-        if (requestIdRef.current !== requestId) return;
-      }
     },
     [],
   );
 
-  const message = selected
-    ? composeMessage({ title: selected.title, artist: selected.artist, links, universal })
-    : '';
+  const message = selected ? composeMessage({ title: selected.title, artist: selected.artist, links }) : '';
 
-  const pendingKeys = resolving
-    ? PRIORITY_PLATFORMS.map((p) => p.key).filter((key) => !links[key])
-    : [];
+  const pendingKeys = resolving ? PLATFORMS.map((p) => p.key).filter((key) => !links[key]) : [];
 
   const handleCopy = useCallback(async () => {
     try {

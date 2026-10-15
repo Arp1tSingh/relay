@@ -1,7 +1,7 @@
 # Music Link Sharer
 
 Search a song, pick the right version, and send one message containing links for
-Spotify, Apple Music, YouTube Music and every other platform the song is on.
+Spotify, Apple Music and YouTube Music.
 
 Built to replace the Odesli / song.link API, which was retired on 2026-07-31.
 See `plan.md` for the full design and the reasoning behind each choice.
@@ -12,28 +12,23 @@ See `plan.md` for the full design and the reasoning behind each choice.
    `access-control-allow-origin: *`, so no proxy is needed. Results are fixed to
    the `US` storefront.
 2. **Resolve** — tapping a result calls `/api/resolve`, which asks MusicLink for
-   the Spotify and YouTube Music links. A second call to `/api/details` fetches
-   the universal page and the long tail of other platforms.
+   the Spotify and YouTube Music links. Apple Music is already known from the
+   iTunes result.
 3. **Compose** — the browser builds a plain-text message and offers Copy and Share.
 
-### Why two serverless endpoints
+Only the three platforms above are requested and rendered. MusicLink returns around
+twenty, but nothing else is shown and nothing else is asked for.
 
-MusicLink states that the first lookup of an item takes 10–15 seconds because it
-searches every platform, while `/v2/convert` searches a single platform and
-returns much faster. A full resolve would exceed the default serverless function
-timeout, so the two halves are separate endpoints:
+### Why `/v2/convert` rather than `/v2/resolve`
 
-- `api/resolve.js` — two `/v2/convert` calls in parallel. Fast. Supplies the links
-  people actually wait for.
-- `api/details.js` — one `/v2/resolve` call. Slow. Supplies the universal page,
-  the artwork, the ISRC, and every other platform. Runs after the fast call and
-  never blocks the message.
+MusicLink states that a full `/v2/resolve` searches every platform and takes 10–15
+seconds on a first lookup, which would overrun the default serverless function
+timeout. `/v2/convert` searches a single platform and returns much faster, so
+`api/resolve.js` makes two of those in parallel — one for Spotify, one for YouTube
+Music. Two requests per cold lookup instead of three.
 
 Apple Music renders instantly from the iTunes data already in the browser, so the
-message is useful before either request finishes.
-
-`youtube` is derived from `youtube_music` rather than requested — the same video
-serves both, which saves an API call.
+message is usable before either request finishes.
 
 ## Setup
 
@@ -65,9 +60,9 @@ vercel env add MUSICLINK_API_KEY
 ## Caching
 
 Both endpoints send `Cache-Control: s-maxage=604800, stale-while-revalidate=86400`,
-so Vercel's CDN absorbs every repeat lookup. Each cold miss costs three
-MusicLink requests, which makes caching necessary rather than an optimisation:
-the free tier allows 300 requests per month and 10 per minute.
+so Vercel's CDN absorbs every repeat lookup. Each cold miss costs two MusicLink
+requests, which makes caching necessary rather than an optimisation: the free tier
+allows 300 requests per month and 10 per minute.
 
 Responses on `429` are not cached and surface the MusicLink rate-limit message.
 
@@ -85,8 +80,7 @@ Responses on `429` are not cached and surface the MusicLink rate-limit message.
 ```
 api/
   _lib/musiclink.js   All MusicLink request and response handling
-  resolve.js          Fast path: Spotify + YouTube Music
-  details.js          Slow path: universal page, artwork, ISRC, long tail
+  resolve.js          Spotify + YouTube Music, via parallel /v2/convert calls
 src/
   components/         SearchBox, ResultList, MessagePreview
   lib/                itunes.js, composeMessage.js, share.js

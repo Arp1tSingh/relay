@@ -44,7 +44,7 @@ export default async function handler(req, res) {
     return sendJson(
       res,
       429,
-      { title, artist, links, universal: null, missing, error: 'Too many lookups right now. Please try again in a moment.' },
+      { title, artist, links, missing, error: 'Too many lookups right now. Please try again in a moment.' },
       { cacheSeconds: 0 },
     );
   }
@@ -55,7 +55,6 @@ export default async function handler(req, res) {
     title,
     artist,
     links,
-    universal: null,
     missing,
     warning: configured
       ? undefined
