@@ -77,7 +77,10 @@ export function urlFromConvert(body) {
 }
 
 export function sendJson(res, status, payload, { cacheSeconds = 604800 } = {}) {
-  res.setHeader('Cache-Control', `s-maxage=${cacheSeconds}, stale-while-revalidate=86400`);
+  const edge = `max-age=${cacheSeconds}, stale-while-revalidate=86400`;
+  res.setHeader('Cache-Control', 'public, max-age=0, must-revalidate');
+  res.setHeader('CDN-Cache-Control', `s-maxage=${cacheSeconds}, stale-while-revalidate=86400`);
+  res.setHeader('Vercel-CDN-Cache-Control', edge);
   res.setHeader('Content-Type', 'application/json; charset=utf-8');
   res.status(status).json(payload);
 }
