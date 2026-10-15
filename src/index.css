@@ -1011,12 +1011,46 @@ body {
   }
 }
 
+@media (max-width: 640px) {
+  .topbar {
+    gap: 10px;
+  }
+
+  .topbar__actions {
+    flex: none;
+    gap: 8px;
+  }
+
+  .nav {
+    padding: 3px;
+  }
+
+  .nav__link {
+    padding: 6px 11px;
+    font-size: 12.5px;
+  }
+
+  .brand {
+    gap: 9px;
+  }
+
+  .brand__name {
+    font-size: 15.5px;
+  }
+}
+
 @media (max-width: 420px) {
   .brand__tag {
     display: none;
   }
 
   .result__sub {
+    display: none;
+  }
+}
+
+@media (max-width: 359px) {
+  .brand__text {
     display: none;
   }
 }

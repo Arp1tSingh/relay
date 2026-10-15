@@ -1,5 +1,21 @@
+import { useEffect, useState } from 'react';
+
+const WIDE_PLACEHOLDER = 'Search a song, album or artist — try: dreamin by partynextdoor';
+const NARROW_PLACEHOLDER = 'Try: dreamin by partynextdoor';
+const NARROW_QUERY = '(max-width: 640px)';
+
 export default function SearchBox({ value, onChange, busy, resultCount }) {
+  const [placeholder, setPlaceholder] = useState(WIDE_PLACEHOLDER);
   const hasValue = value.length > 0;
+
+  useEffect(() => {
+    const query = window.matchMedia(NARROW_QUERY);
+    const apply = () => setPlaceholder(query.matches ? NARROW_PLACEHOLDER : WIDE_PLACEHOLDER);
+
+    apply();
+    query.addEventListener('change', apply);
+    return () => query.removeEventListener('change', apply);
+  }, []);
 
   return (
     <div className="searchbar">
@@ -16,7 +32,7 @@ export default function SearchBox({ value, onChange, busy, resultCount }) {
           type="search"
           value={value}
           onChange={(event) => onChange(event.target.value)}
-          placeholder="Search a song, album or artist"
+          placeholder={placeholder}
           autoComplete="off"
           autoCorrect="off"
           spellCheck="false"
