@@ -26,6 +26,7 @@ single-platform link leaves everyone else unable to listen.
 ┌─ Browser ──────────────────────────────────────────────┐
 │ SearchPage                                              │
 │   search  ──────────────▶ iTunes Search API (CORS open) │
+│      fallback ──────────▶ iTunes Lookup (artist catalog)│
 │   select track                                            │
 │     ├─ localStorage hit? ──▶ render, no network          │
 │     └─ miss ──▶ GET /api/resolve                        │
@@ -65,6 +66,32 @@ lookups *ever*, not per month.
   it directly. No proxy.
 - Storefront is fixed to `US`. Response content varies by region.
 - `limit=20`, of which the first 5 are shown with a **Show more** button.
+
+### The search index has holes, and `lookup` is the back door
+
+The `search` endpoint does not reliably return every track that exists in an
+artist's catalog. Verified case: **"Dreamin" by PARTYNEXTDOOR** (trackId
+`6814090548`, released 2015) is absent from `search` results for *every*
+variation tried — `dreamin partynextdoor`, `PND dreamin`,
+`party next door dreamin`, `dreamin pnd`, and bare `dreamin` — even at
+`limit=200`, where the query returned only 110 rows. Its metadata is perfectly
+normal and it is streamable in the US.
+
+The same track *is* returned by `lookup?id=<artistId>&entity=song`, which walks
+an artist's catalog rather than searching an index. So `searchSongs` falls back
+to that path when the primary search fails to satisfy the query:
+
+1. `parseQuery` splits `"dreamin by partynextdoor"` into title and artist.
+2. If no result matches **both** the title hint and the artist hint, the artist
+   is resolved via `entity=musicArtist`, their catalog is pulled with `lookup`,
+   and catalog tracks matching the title are prepended to the results.
+3. With no `"by"` clause, the dominant artist across the top 5 results is used.
+
+The "both" condition matters. An earlier version checked the title alone, and a
+different artist's `Dreamin'` (Common & Pete Rock) satisfied it, so the fallback
+never ran and the requested track stayed missing.
+
+This costs two extra unmetered iTunes calls, only on the queries that need it.
 
 ### MusicLink — resolution only
 `https://api.musiclink.one/v2/convert` with `Authorization: Bearer <key>`
