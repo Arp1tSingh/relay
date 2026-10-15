@@ -1,11 +1,24 @@
-import { useEffect, useState } from 'react';
-import { labelFor } from '../lib/composeMessage.js';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import PlatformPill from './PlatformPill.jsx';
+import { PLATFORMS } from '../lib/composeMessage.js';
 
 const SLOW_HINT_AFTER_MS = 4000;
+const EDITOR_MAX_HEIGHT = 320;
+
+function ShareIcon() {
+  return (
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" focusable="false">
+      <path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7" />
+      <path d="M12 15V3M8 7l4-4 4 4" />
+    </svg>
+  );
+}
 
 export default function MessagePreview({
   track,
-  message,
+  links,
+  draft,
+  onDraftChange,
   pendingKeys,
   resolving,
   error,
@@ -13,8 +26,19 @@ export default function MessagePreview({
   onCopy,
   onShare,
   shareAvailable,
+  copied,
+  sheetOpen,
+  onClose,
 }) {
   const [showSlowHint, setShowSlowHint] = useState(false);
+  const editorRef = useRef(null);
+
+  useLayoutEffect(() => {
+    const el = editorRef.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = `${Math.min(el.scrollHeight, EDITOR_MAX_HEIGHT)}px`;
+  }, [draft]);
 
   useEffect(() => {
     if (!resolving) {
@@ -27,53 +51,76 @@ export default function MessagePreview({
 
   if (!track) return null;
 
-  const stillWorking = pendingKeys.map((key) => labelFor(key));
+  const pendingSet = new Set(pendingKeys);
 
   return (
-    <section className="preview" aria-live="polite">
-      <header className="preview__head">
-        {track.artwork ? <img src={track.artwork} alt="" width="44" height="44" /> : null}
-        <div>
-          <h2>{track.title}</h2>
-          <p>{track.artist}</p>
+    <section className={`card${sheetOpen ? ' card--open' : ''}`} aria-label="Share message">
+      <button type="button" className="sheet__close" onClick={onClose} aria-label="Close message">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" focusable="false">
+          <path d="M6 6l12 12M18 6L6 18" />
+        </svg>
+      </button>
+
+      <div className="card__enter" key={track.trackId}>
+        <div className="card__head">
+          {track.artwork ? <img className="card__art" src={track.artwork} alt="" width="96" height="96" /> : null}
+          <div>
+            <h2 className="card__title">{track.title}</h2>
+            <p className="card__artist">{track.artist}</p>
+          </div>
         </div>
-      </header>
 
-      <pre className="preview__message">{message}</pre>
-
-      {stillWorking.length > 0 ? (
-        <ul className="pending">
-          {stillWorking.map((label) => (
-            <li key={label} className="pending__chip">
-              <span className="spinner" aria-hidden="true" />
-              {label}
-            </li>
+        <div className="pills">
+          {PLATFORMS.map((platform) => (
+            <PlatformPill
+              key={platform.key}
+              platform={platform}
+              label={platform.label}
+              url={links[platform.key]}
+              pending={pendingSet.has(platform.key)}
+            />
           ))}
-        </ul>
-      ) : null}
+        </div>
 
-      {resolving && showSlowHint ? (
-        <p className="preview__hint">
-          First-time lookups take a little longer while every platform is searched. Copy works now, and the rest
-          will fill in on its own.
-        </p>
-      ) : null}
+        <textarea
+          ref={editorRef}
+          className="editor"
+          value={draft}
+          onChange={(event) => onDraftChange(event.target.value)}
+          spellCheck="false"
+          aria-label="Message to send"
+        />
 
-      {error ? (
-        <p className="state state--error" role="alert">
-          {error}
-        </p>
-      ) : null}
+        {resolving && showSlowHint ? (
+          <p className="card__note">
+            <span className="spinner" aria-hidden="true" />
+            First-time lookups take a little longer. Copy works now; the rest will fill in.
+          </p>
+        ) : null}
 
-      {warning ? <p className="state state--warn">{warning}</p> : null}
+        {error ? (
+          <p className="state state--error" role="alert" style={{ marginTop: 12 }}>
+            {error}
+          </p>
+        ) : null}
 
-      <div className="preview__actions">
-        <button type="button" className="button button--primary" onClick={onCopy}>
-          Copy message
-        </button>
-        <button type="button" className="button" onClick={onShare}>
-          {shareAvailable ? 'Share' : 'Copy'}
-        </button>
+        {warning ? (
+          <p className="state state--warn" style={{ marginTop: 12 }}>
+            {warning}
+          </p>
+        ) : null}
+
+        <div className="card__actions">
+          <button type="button" className={`btn btn--primary${copied ? ' btn--copied' : ''}`} onClick={onCopy}>
+            {copied ? 'Copied ✓' : 'Copy message'}
+          </button>
+
+          {shareAvailable ? (
+            <button type="button" className="btn" onClick={onShare} aria-label="Share">
+              <ShareIcon />
+            </button>
+          ) : null}
+        </div>
       </div>
     </section>
   );
