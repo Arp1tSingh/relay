@@ -8,21 +8,15 @@
       name="description"
       content="Search a song, pick the right version, and share one message with links for Spotify, Apple Music, YouTube Music and more."
     />
-    <meta name="theme-color" content="#0b0d12" />
+    <meta name="theme-color" content="#faf8f5" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <script>
       (function () {
         try {
           var saved = localStorage.getItem('relay-theme');
-          var theme =
-            saved === 'dark' || saved === 'light'
-              ? saved
-              : window.matchMedia('(prefers-color-scheme: light)').matches
-                ? 'light'
-                : 'dark';
-          document.documentElement.dataset.theme = theme;
+          document.documentElement.dataset.theme = saved === 'dark' ? 'dark' : 'light';
         } catch (e) {
-          document.documentElement.dataset.theme = 'dark';
+          document.documentElement.dataset.theme = 'light';
         }
       })();
     </script>

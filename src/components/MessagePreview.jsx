@@ -91,9 +91,21 @@ export default function MessagePreview({
           aria-label="Message to send"
         />
 
+        {resolving ? (
+          <div className="loading-more" aria-live="polite">
+            <span className="loading-more__label">
+              <span className="spinner" aria-hidden="true" />
+              More links are loading
+            </span>
+            <span className="loading-more__bars" aria-hidden="true">
+              <span className="loading-more__bar" />
+              <span className="loading-more__bar" />
+            </span>
+          </div>
+        ) : null}
+
         {resolving && showSlowHint ? (
           <p className="card__note">
-            <span className="spinner" aria-hidden="true" />
             First-time lookups take a little longer. Copy works now; the rest will fill in.
           </p>
         ) : null}

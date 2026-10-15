@@ -14,10 +14,12 @@ const COPIED_MS = 2000;
 const THEME_KEY = 'relay-theme';
 
 function readTheme() {
-  if (typeof window === 'undefined') return 'dark';
-  const saved = window.localStorage.getItem(THEME_KEY);
-  if (saved === 'dark' || saved === 'light') return saved;
-  return window.matchMedia?.('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+  if (typeof window === 'undefined') return 'light';
+  try {
+    return window.localStorage.getItem(THEME_KEY) === 'dark' ? 'dark' : 'light';
+  } catch {
+    return 'light';
+  }
 }
 
 export default function App() {
