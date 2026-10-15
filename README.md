@@ -49,13 +49,33 @@ the app still works, but only the Apple Music link is returned.
 
 ## Deploying to Vercel
 
+### Option 1: Git integration (recommended)
+
+Connect the repository once and every push to `master` deploys automatically:
+
+1. Vercel dashboard → **Add New… → Project** → **Import** `Arp1tSingh/relay`
+   (or, for an existing project, **Settings → Git → Connect Git Repository**)
+2. Keep the detected settings: framework **Vite**, build `npm run build`,
+   output `dist`. `vercel.json` already pins these.
+3. **Settings → Environment Variables** → add `MUSICLINK_API_KEY`
+4. Redeploy.
+
+The build needs no environment variables; the key is only read at request time by
+`api/resolve.js`.
+
+### Option 2: CLI
+
 ```bash
-vercel
-vercel env add MUSICLINK_API_KEY
+npx vercel login
+npx vercel link
+npx vercel env add MUSICLINK_API_KEY
+npx vercel --prod
 ```
 
-`vercel.json` builds to `dist` and routes everything except `/api/*` to
-`index.html`.
+### Branch previews
+
+With the Git integration connected, every pull request gets its own preview URL
+and its own environment variables, so changes can be checked before merging.
 
 ## Caching
 
