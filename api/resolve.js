@@ -7,6 +7,10 @@ const TARGETS = [
   { to: 'youtube_music', key: 'youtube_music' },
 ];
 
+const REQUEST_SPACING_MS = 1250;
+
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
 function readParam(req, name) {
   const raw = req.query?.[name];
   if (Array.isArray(raw)) return raw[0];
@@ -23,24 +27,24 @@ export default async function handler(req, res) {
   }
 
   const links = { apple_music: appleMusicUrl };
-  const settled = await Promise.allSettled(
-    TARGETS.map((target) => convertTo(appleMusicUrl, target.to).then((body) => [target.key, body])),
-  );
-
+  const missing = [];
   let rateLimited = false;
-  for (const outcome of settled) {
-    if (outcome.status === 'rejected') {
-      if (outcome.reason?.status === 429) rateLimited = true;
-      continue;
+
+  for (const [index, target] of TARGETS.entries()) {
+    if (index > 0) await sleep(REQUEST_SPACING_MS);
+
+    try {
+      const body = await convertTo(appleMusicUrl, target.to);
+      const url = urlFromConvert(body);
+      if (url) links[target.key] = url;
+      else missing.push(target.key);
+    } catch (error) {
+      missing.push(target.key);
+      if (error?.status === 429) rateLimited = true;
     }
-    const [key, body] = outcome.value;
-    const url = urlFromConvert(body);
-    if (url) links[key] = url;
   }
 
-  const missing = TARGETS.map((t) => t.key).filter((key) => !links[key]);
-
-  if (rateLimited) {
+  if (rateLimited && missing.length === TARGETS.length) {
     return sendJson(
       res,
       429,
