@@ -9,7 +9,15 @@ export function artworkAtSize(url, size = 300) {
 
 export function cleanAppleUrl(url) {
   if (!url) return undefined;
-  return url.split('?')[0];
+
+  const [base, query] = url.split('?');
+  if (!query) return base;
+
+  const params = new URLSearchParams(query);
+  params.delete('uo');
+
+  const kept = params.toString();
+  return kept ? `${base}?${kept}` : base;
 }
 
 export function normaliseTrack(result) {
