@@ -1,23 +1,38 @@
-# Music Link Sharer
+# SongRelay
 
 Search a song, pick the right version, and send one message containing links for
 Spotify, Apple Music and YouTube Music.
 
 Built to replace the Odesli / song.link API, which was retired on 2026-07-31.
-See `plan.md` for the full design and the reasoning behind each choice.
+See `CONTEXT.md` for the full design and the reasoning behind each choice.
 
 ## How it works
 
 1. **Search** — the browser calls the iTunes Search API directly. It sends
    `access-control-allow-origin: *`, so no proxy is needed. Results are fixed to
    the `US` storefront.
-2. **Resolve** — tapping a result calls `/api/resolve`, which asks MusicLink for
-   the Spotify and YouTube Music links. Apple Music is already known from the
-   iTunes result.
+2. **Resolve** — tapping a result first checks `localStorage`. On a hit the
+   message appears with no network call at all. On a miss it calls
+   `/api/resolve`, which asks MusicLink for the Spotify and YouTube Music links.
+   Apple Music is already known from the iTunes result.
 3. **Compose** — the browser builds a plain-text message and offers Copy and Share.
+4. **Recent** — every Copy or Share is recorded locally, so `/recent` can reopen
+   and edit any earlier message without touching the network.
 
 Only the three platforms above are requested and rendered. MusicLink returns around
 twenty, but nothing else is shown and nothing else is asked for.
+
+## Caching
+
+Three tiers sit in front of MusicLink, so repeat lookups cost nothing:
+
+| Tier | Where | Lifetime |
+|---|---|---|
+| `localStorage` | browser | 7 days for links, 90 days for history |
+| Vercel CDN | edge | 7 days |
+| MusicLink | upstream | 2 calls per cold miss |
+
+A partial result is never cached at any tier. See `CONTEXT.md` for the rules.
 
 ### Why `/v2/convert` rather than `/v2/resolve`
 
@@ -102,7 +117,11 @@ api/
   _lib/musiclink.js   All MusicLink request and response handling
   resolve.js          Spotify + YouTube Music, via parallel /v2/convert calls
 src/
-  components/         SearchBox, ResultList, MessagePreview
-  lib/                itunes.js, composeMessage.js, share.js
-  App.jsx
+  components/         Brand, Link, SearchBox, ResultList, MessagePreview, PlatformPill, ThemeToggle
+  lib/                itunes.js, composeMessage.js, share.js, localStore.js, router.js, format.js, brands.jsx
+  pages/              SearchPage.jsx, RecentPage.jsx
+  App.jsx             shell: topbar, nav, theme, route switch
 ```
+
+`CONTEXT.md` holds the full architecture, the reasoning behind each decision, and
+the bugs that produced several of them.

@@ -9,3 +9,22 @@ export function formatDuration(ms) {
 export function pluralise(count, singular, plural = `${singular}s`) {
   return `${count} ${count === 1 ? singular : plural}`;
 }
+
+const RELATIVE_UNITS = [
+  ['day', 24 * 60 * 60 * 1000],
+  ['hour', 60 * 60 * 1000],
+  ['minute', 60 * 1000],
+];
+
+export function formatRelativeTime(timestamp, now = Date.now()) {
+  if (!timestamp) return '';
+
+  const elapsed = Math.max(0, now - timestamp);
+
+  for (const [unit, ms] of RELATIVE_UNITS) {
+    const count = Math.floor(elapsed / ms);
+    if (count >= 1) return `${count} ${unit}${count === 1 ? '' : 's'} ago`;
+  }
+
+  return 'just now';
+}

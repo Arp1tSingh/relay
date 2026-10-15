@@ -113,6 +113,40 @@ body {
   margin-bottom: 22px;
 }
 
+.topbar__actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.nav {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+}
+
+.nav__link {
+  padding: 7px 15px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--muted);
+  text-decoration: none;
+  border-radius: 999px;
+  transition: background-color 120ms ease, color 120ms ease;
+}
+
+.nav__link:hover {
+  color: var(--text);
+}
+
+.nav__link--active {
+  color: var(--on-accent);
+  background: var(--accent-grad);
+}
+
 .brand {
   display: flex;
   align-items: center;
@@ -734,6 +768,95 @@ body {
 
 .sheet__close {
   display: none;
+}
+
+/* ---------- recent page ---------- */
+
+.recent__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 14px;
+}
+
+.recent__head h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.recent__head .showmore {
+  width: auto;
+  margin: 0;
+  padding: 8px 14px;
+  font-size: 13px;
+}
+
+.recent__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.recent .state {
+  margin-top: 8px;
+}
+
+.card-pane--inline {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  pointer-events: none;
+}
+
+.card-pane--inline .card {
+  position: relative;
+  max-height: 84dvh;
+  border-radius: 20px 20px 0 0;
+  transform: translateY(0);
+  pointer-events: auto;
+  animation: sheet-up 260ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes sheet-up {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (min-width: 900px) {
+  .card-pane--inline {
+    position: sticky;
+    inset: auto;
+    top: 84px;
+    z-index: auto;
+    display: block;
+    pointer-events: auto;
+  }
+
+  .card-pane--inline .card {
+    max-height: calc(100dvh - 108px);
+    border-radius: 18px;
+    transform: none;
+    animation: card-in 240ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .card-pane--inline .scrim {
+    display: none;
+  }
 }
 
 /* ---------- footer + toast ---------- */

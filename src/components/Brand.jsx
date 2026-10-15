@@ -7,7 +7,7 @@ export default function Brand() {
         </svg>
       </span>
       <span className="brand__text">
-        <p className="brand__name">Music Link Sharer</p>
+        <p className="brand__name">SongRelay</p>
         <p className="brand__tag">One song, every platform</p>
       </span>
     </div>

@@ -27,6 +27,7 @@ export default async function handler(req, res) {
   }
 
   const links = { apple_music: appleMusicUrl };
+  const outcomes = {};
   const missing = [];
   let rateLimited = false;
 
@@ -36,32 +37,51 @@ export default async function handler(req, res) {
     try {
       const body = await convertTo(appleMusicUrl, target.to);
       const url = urlFromConvert(body);
-      if (url) links[target.key] = url;
-      else missing.push(target.key);
+
+      if (url) {
+        links[target.key] = url;
+        outcomes[target.key] = 'found';
+      } else {
+        outcomes[target.key] = 'absent';
+        missing.push(target.key);
+      }
     } catch (error) {
+      const status = error?.status;
+      const genuine = status === 404;
+
+      outcomes[target.key] = genuine ? 'absent' : 'error';
       missing.push(target.key);
-      if (error?.status === 429) rateLimited = true;
+      if (status === 429) rateLimited = true;
     }
   }
+
+  const complete = TARGETS.every((target) => outcomes[target.key] !== 'error');
+  const cacheSeconds = complete ? 604800 : 0;
 
   if (rateLimited && missing.length === TARGETS.length) {
     return sendJson(
       res,
       429,
-      { title, artist, links, missing, error: 'Too many lookups right now. Please try again in a moment.' },
+      { title, artist, links, missing, complete: false, error: 'Too many lookups right now. Please try again in a moment.' },
       { cacheSeconds: 0 },
     );
   }
 
   const configured = Boolean(process.env.MUSICLINK_API_KEY);
 
-  return sendJson(res, 200, {
-    title,
-    artist,
-    links,
-    missing,
-    warning: configured
-      ? undefined
-      : 'MUSICLINK_API_KEY is not set on the server, so only the Apple Music link is available.',
-  });
+  return sendJson(
+    res,
+    200,
+    {
+      title,
+      artist,
+      links,
+      missing,
+      complete,
+      warning: configured
+        ? undefined
+        : 'MUSICLINK_API_KEY is not set on the server, so only the Apple Music link is available.',
+    },
+    { cacheSeconds },
+  );
 }
